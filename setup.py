@@ -18,6 +18,7 @@ setup(
         "click==7.*",
         "praw==6.*",
         "EbookLib==0.17.*",
+        "python-dotenv==1.*",
     ],
     entry_points={
         "console_scripts": ["reddit2epub = reddit2epub.reddit2epubCli:main_cli"]

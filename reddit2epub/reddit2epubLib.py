@@ -5,6 +5,7 @@ from ebooklib import epub
 from ebooklib.epub import EpubBook
 from praw.reddit import Redditor, Submission, Subreddit
 
+# TODO: pull API creds from .env
 reddit = praw.Reddit(
     client_id="sUBJ9ERh2RyjmQ",
     client_secret=None,
