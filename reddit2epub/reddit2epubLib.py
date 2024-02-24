@@ -113,7 +113,9 @@ def get_selected_posts(
     selected_submissions = []
     for p in list_of_posts:
         # starting with the same words
-        if p.title.startswith(search_title) and isinstance(p, Submission):
+        if p.title.lower().startswith(search_title.lower()) and isinstance(
+            p, Submission
+        ):
             if p.is_self:
                 selected_submissions.append(p)
             else:
