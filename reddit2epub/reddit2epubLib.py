@@ -9,11 +9,39 @@ from praw.reddit import Redditor, Submission, Subreddit
 
 storedAPIcreds = dotenv_values(".env")
 
-if storedAPIcreds is None:
-    raise Exception("No API credentials found. Please add them to .env")
-elif storedAPIcreds["reddit_id"] is None:
+# Failure modes to check here: files don't exist, .env.dist has non-template credentials instead of .env file
+
+
+# check that .env was loaded correctly
+if not storedAPIcreds:
+    # .env file not loaded or found, so let's check if .env.dist exists
+    templateAPIcreds = dotenv_values(".env.dist")
+    if not templateAPIcreds:
+        # .env.dist file not loaded or found either
+        raise Exception(
+            "Could not load .env or .env.dist file. "
+            "Please check README.md file for instructions on how to add credentials to .env"
+        )
+    # check if .env.dist has any template values
+    elif (
+        templateAPIcreds["reddit_id"] == "Replace_Me"
+        and templateAPIcreds["reddit_secret"] == "Replace_Me_Too"
+    ):
+        raise Exception(
+            "Could not load .env file. "
+            "And found template values in .env.dist file. "
+            "Please check README.md file for instructions on how to add credentials to .env"
+        )
+    # could not load .env file and .env.dist has non-template values (instead of .env having them)
+    else:
+        raise Exception(
+            "Found updated values in .env.dist file but no .env file. "
+            "Please check README.md file for instructions on how to add credentials to .env"
+        )
+
+if not storedAPIcreds["reddit_id"]:
     raise Exception("No reddit_id found. Please add it to .env")
-elif storedAPIcreds["reddit_secret"] is None:
+if not storedAPIcreds["reddit_secret"]:
     raise Exception("No reddit_secret found. Please add it to .env")
 
 if not storedAPIcreds["reddit_username"] or not storedAPIcreds["reddit_password"]:
