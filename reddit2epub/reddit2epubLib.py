@@ -16,14 +16,27 @@ elif storedAPIcreds["reddit_id"] is None:
 elif storedAPIcreds["reddit_secret"] is None:
     raise Exception("No reddit_secret found. Please add it to .env")
 
-reddit = praw.Reddit(
-    client_id=storedAPIcreds["reddit_id"],
-    client_secret=storedAPIcreds["reddit_secret"],
-    user_agent="pc:Reddit stories to epub:v{} (by u/jklideas and mircohaug)".format(
-        pkg_resources.get_distribution("reddit2epub").version
-    ),
-)
+if not storedAPIcreds["reddit_username"] or not storedAPIcreds["reddit_password"]:
+    reddit = praw.Reddit(
+        client_id=storedAPIcreds["reddit_id"],
+        client_secret=storedAPIcreds["reddit_secret"],
+        user_agent="pc:Reddit stories to epub:v{} (by u/jklideas and mircohaug)".format(
+            pkg_resources.get_distribution("reddit2epub").version
+        ),
+    )
+else:
+    print("Using stored username and password to authenticate to Reddit.")
+    reddit = praw.Reddit(
+        client_id=storedAPIcreds["reddit_id"],
+        client_secret=storedAPIcreds["reddit_secret"],
+        user_agent="pc:Reddit stories to epub:v{} (by u/jklideas and mircohaug)".format(
+            pkg_resources.get_distribution("reddit2epub").version
+        ),
+        username=storedAPIcreds["reddit_username"],
+        password=storedAPIcreds["reddit_password"],
+    )
 
+# TODO: test authentication worked.
 
 def get_chapters_from_anchor(
     input_url,
