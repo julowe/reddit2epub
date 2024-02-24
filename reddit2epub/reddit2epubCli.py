@@ -41,6 +41,12 @@ def print_version(ctx, param, value):
     help="How many common words do the titles have at the beginning.",
 )
 @click.option(
+    "--max_posts",
+    "-m",
+    default=200,
+    help="What is the maximum number of posts to fetch.",
+)
+@click.option(
     "--all-reddit/--no-all-reddit",
     default=False,
     help="Search over all reddit. " "Meant for stories which span subreddits",
@@ -53,7 +59,7 @@ def print_version(ctx, param, value):
     expose_value=False,
     is_eager=True,
 )
-def main_cli(input_url: str, overlap: int, output_filename, all_reddit):
+def main_cli(input_url: str, overlap: int, output_filename, all_reddit, max_posts: int):
     author, selected_submissions, search_title = get_chapters_from_anchor(
         input_url, overlap, all_reddit
     )
@@ -73,11 +79,11 @@ def main_cli(input_url: str, overlap: int, output_filename, all_reddit):
     elif len_subs == 0:
         raise Exception("No text chapters found")
 
-    elif len_subs >= 200:
+    elif len_subs >= max_posts:
         # TODO: make max submissions a parameter
         print(
-            "Got more than 200 submissions from author in this subreddit :-O. "
-            "It may be possible that old chapters are not included.",
+            "Got more than {} submissions from author in this subreddit :-O. "
+            "It may be possible that old chapters are not included.".format(max_posts),
             file=sys.stderr,
         )
 
