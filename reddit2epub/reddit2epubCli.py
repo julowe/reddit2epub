@@ -94,7 +94,6 @@ def main_cli(
         raise Exception("No text chapters found")
 
     elif len_subs >= max_posts:
-        # TODO: make max submissions a parameter
         print(
             "Got more than {} submissions from author in this subreddit :-O. "
             "It may be possible that old chapters are not included.".format(max_posts),
