@@ -1,15 +1,27 @@
 from typing import List, Iterable
 
+from dotenv import dotenv_values
+import pkg_resources
 import praw
 from ebooklib import epub
 from ebooklib.epub import EpubBook
 from praw.reddit import Redditor, Submission, Subreddit
 
-# TODO: pull API creds from .env
+storedAPIcreds = dotenv_values(".env")
+
+if storedAPIcreds is None:
+    raise Exception("No API credentials found. Please add them to .env")
+elif storedAPIcreds["reddit_id"] is None:
+    raise Exception("No reddit_id found. Please add it to .env")
+elif storedAPIcreds["reddit_secret"] is None:
+    raise Exception("No reddit_secret found. Please add it to .env")
+
 reddit = praw.Reddit(
-    client_id="sUBJ9ERh2RyjmQ",
-    client_secret=None,
-    user_agent="Reddit stories to epub by mircohaug",
+    client_id=storedAPIcreds["reddit_id"],
+    client_secret=storedAPIcreds["reddit_secret"],
+    user_agent="pc:Reddit stories to epub:v{} (by u/jklideas and mircohaug)".format(
+        pkg_resources.get_distribution("reddit2epub").version
+    ),
 )
 
 
