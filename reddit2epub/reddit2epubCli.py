@@ -36,6 +36,13 @@ def print_version(ctx, param, value):
     help="The filename of the output epub. Defaults to the first chapter title.",
 )
 @click.option(
+    "override_title",
+    "--title",
+    "-t",
+    default="",
+    help="Title of book, overriding the default of the first chapter title.",
+)
+@click.option(
     "--overlap",
     default=2,
     help="How many common words do the titles have at the beginning.",
@@ -59,7 +66,14 @@ def print_version(ctx, param, value):
     expose_value=False,
     is_eager=True,
 )
-def main_cli(input_url: str, overlap: int, output_filename, all_reddit, max_posts: int):
+def main_cli(
+    input_url: str,
+    overlap: int,
+    output_filename,
+    all_reddit,
+    max_posts: int,
+    override_title,
+):
     author, selected_submissions, search_title = get_chapters_from_anchor(
         input_url, overlap, all_reddit
     )
@@ -89,7 +103,13 @@ def main_cli(input_url: str, overlap: int, output_filename, all_reddit, max_post
 
     # set metadata
     book_id = selected_submissions[-1].id
-    book_title = selected_submissions[-1].title
+    if not override_title:
+        book_title = " ".join(
+            selected_submissions[-1].title.split(" ")[0:overlap]
+        )
+    else:
+        book_title = override_title
+
     book_author = author.name
 
     # Build the ebook
@@ -101,7 +121,7 @@ def main_cli(input_url: str, overlap: int, output_filename, all_reddit, max_post
     if output_filename:
         file_name = output_filename
     else:
-        file_name = (re.sub("[^0-9a-zA-Z]+", "_", book_title) + ".epub").strip("_OC")
+        file_name = re.sub("[^0-9a-zA-Z]+", "_", book_title.strip(",.")) + ".epub"
 
     # write to the file
     epub.write_epub(file_name, book, {})
