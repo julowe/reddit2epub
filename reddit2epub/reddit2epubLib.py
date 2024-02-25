@@ -6,6 +6,7 @@ import praw
 from ebooklib import epub
 from ebooklib.epub import EpubBook
 from praw.reddit import Redditor, Submission, Subreddit
+import sys
 
 storedAPIcreds = dotenv_values(".env")
 
@@ -53,7 +54,7 @@ if not storedAPIcreds["reddit_username"] or not storedAPIcreds["reddit_password"
         ),
     )
 else:
-    print("Using stored username and password to authenticate to Reddit.")
+    print("Authenticating to Reddit API with stored username and password...")
     reddit = praw.Reddit(
         client_id=storedAPIcreds["reddit_id"],
         client_secret=storedAPIcreds["reddit_secret"],
@@ -64,7 +65,17 @@ else:
         password=storedAPIcreds["reddit_password"],
     )
 
-# TODO: test authentication worked.
+try:
+    reddit.user.me()
+except Exception as e:
+    if e.error == "invalid_grant":
+        print("Authentication failed. Please check your credentials in .env")
+        sys.exit(1)
+    else:
+        raise
+else:
+    print("Authenticated successfully.")
+
 
 def get_chapters_from_anchor(
     input_url,
