@@ -1,7 +1,7 @@
 from typing import List, Iterable
 
 from dotenv import dotenv_values
-import pkg_resources
+from importlib.metadata import version
 import praw
 from ebooklib import epub
 from ebooklib.epub import EpubBook
@@ -50,7 +50,7 @@ if not storedAPIcreds["reddit_username"] or not storedAPIcreds["reddit_password"
         client_id=storedAPIcreds["reddit_id"],
         client_secret=storedAPIcreds["reddit_secret"],
         user_agent="pc:Reddit stories to epub:v{} (by u/jklideas and mircohaug)".format(
-            pkg_resources.get_distribution("reddit2epub").version
+            version("reddit2epub")
         ),
     )
 else:
@@ -59,7 +59,7 @@ else:
         client_id=storedAPIcreds["reddit_id"],
         client_secret=storedAPIcreds["reddit_secret"],
         user_agent="pc:Reddit stories to epub:v{} (by u/jklideas and mircohaug)".format(
-            pkg_resources.get_distribution("reddit2epub").version
+            version("reddit2epub")
         ),
         username=storedAPIcreds["reddit_username"],
         password=storedAPIcreds["reddit_password"],

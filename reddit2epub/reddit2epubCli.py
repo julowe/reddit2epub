@@ -3,7 +3,7 @@ import re
 import sys
 
 import click
-import pkg_resources
+from importlib.metadata import version
 from ebooklib import epub
 
 from reddit2epub.reddit2epubLib import (
@@ -15,7 +15,7 @@ from reddit2epub.reddit2epubLib import (
 def print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
-    infos = {"version": pkg_resources.get_distribution("reddit2epub").version}
+    infos = {"version": version("reddit2epub")}
     click.echo(json.dumps(infos))
     ctx.exit()
 
