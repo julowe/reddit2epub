@@ -68,7 +68,9 @@ def authenticate_with_reddit() -> Reddit:
     try:
         redditSession.user.me()
     except Exception as e:
-        print("ERROR: Failed to connect to Reddit API. Please check your credentials in .env")
+        print(
+            "ERROR: Failed to connect to Reddit API. Please check your credentials in .env"
+        )
         if e == "invalid_grant":
             print("Authentication failed. Please check your credentials in .env")
             sys.exit(1)
@@ -181,7 +183,9 @@ def get_selected_posts(
             else:
                 # is crosspost if not likely media and ignored
                 if hasattr(p, "crosspost_parent"):
-                    original_post = list(redditSession.info(fullnames=[p.crosspost_parent]))[0]
+                    original_post = list(
+                        redditSession.info(fullnames=[p.crosspost_parent])
+                    )[0]
                     if not original_post.is_self:
                         # double crossposts not supported
                         continue
@@ -191,7 +195,9 @@ def get_selected_posts(
     return selected_submissions
 
 
-def process_anchor_url(redditSession: Reddit, input_url: str) -> (Redditor, Subreddit, str):
+def process_anchor_url(
+    redditSession: Reddit, input_url: str
+) -> (Redditor, Subreddit, str):
     initial_submission = redditSession.submission(url=input_url)
     title = initial_submission.title
     author = initial_submission.author

@@ -68,8 +68,6 @@ def print_version(ctx, param, value):
     expose_value=False,
     is_eager=True,
 )
-
-
 def main_cli(
     input_url: str,
     overlap: int,
