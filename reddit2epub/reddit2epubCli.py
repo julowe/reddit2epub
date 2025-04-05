@@ -60,6 +60,7 @@ def print_version(ctx, param, value):
 )
 @click.option(
     "--version",
+    "-v",
     help="Print version information and exit.",
     is_flag=True,
     callback=print_version,
