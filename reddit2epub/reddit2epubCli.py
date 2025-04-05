@@ -7,6 +7,7 @@ from importlib.metadata import version
 from ebooklib import epub
 
 from reddit2epub.reddit2epubLib import (
+    authenticate_with_reddit,
     get_chapters_from_anchor,
     create_book_from_chapters,
 )
@@ -67,6 +68,8 @@ def print_version(ctx, param, value):
     expose_value=False,
     is_eager=True,
 )
+
+
 def main_cli(
     input_url: str,
     overlap: int,
@@ -75,8 +78,10 @@ def main_cli(
     max_posts: int,
     override_title,
 ):
+    currentRedditSession = authenticate_with_reddit()
+
     author, selected_submissions, search_title = get_chapters_from_anchor(
-        input_url, overlap, all_reddit
+        currentRedditSession, input_url, overlap, all_reddit
     )
 
     len_subs = len(selected_submissions)

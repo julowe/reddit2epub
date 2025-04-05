@@ -2,91 +2,96 @@ from typing import List, Iterable
 
 from dotenv import dotenv_values
 from importlib.metadata import version
-import praw
 from ebooklib import epub
 from ebooklib.epub import EpubBook
-from praw.reddit import Redditor, Submission, Subreddit
+from praw.reddit import Reddit, Redditor, Submission, Subreddit
 import sys
 
-storedAPIcreds = dotenv_values(".env")
+def authenticate_with_reddit() -> Reddit:
+    # Try to load stored credentials from .env file
+    storedAPIcreds = dotenv_values(".env")
 
-# Failure modes to check here: files don't exist, .env.dist has non-template credentials instead of .env file
+    # Failure modes to check here: files don't exist, .env.dist has non-template credentials instead of .env file
 
+    # check that .env was loaded correctly
+    if not storedAPIcreds:
+        # .env file not loaded or found, so let's check if .env.dist exists
+        templateAPIcreds = dotenv_values(".env.dist")
+        if not templateAPIcreds:
+            # .env.dist file not loaded or found either
+            raise Exception(
+                "Could not load .env or .env.dist file. "
+                "Please check README.md file for instructions on how to add credentials to .env"
+            )
+        # check if .env.dist has any template values
+        elif (
+            templateAPIcreds["reddit_id"] == "Replace_Me"
+            and templateAPIcreds["reddit_secret"] == "Replace_Me_Too"
+        ):
+            raise Exception(
+                "Could not load .env file. "
+                "And found template values in .env.dist file. "
+                "Please check README.md file for instructions on how to add credentials to .env"
+            )
+        # could not load .env file and .env.dist has non-template values (instead of .env having them)
+        else:
+            raise Exception(
+                "Found updated values in .env.dist file but no .env file. "
+                "Please check README.md file for instructions on how to add credentials to .env"
+            )
 
-# check that .env was loaded correctly
-if not storedAPIcreds:
-    # .env file not loaded or found, so let's check if .env.dist exists
-    templateAPIcreds = dotenv_values(".env.dist")
-    if not templateAPIcreds:
-        # .env.dist file not loaded or found either
-        raise Exception(
-            "Could not load .env or .env.dist file. "
-            "Please check README.md file for instructions on how to add credentials to .env"
+    if not storedAPIcreds["reddit_id"]:
+        raise Exception("No reddit_id found. Please add it to .env")
+    if not storedAPIcreds["reddit_secret"]:
+        raise Exception("No reddit_secret found. Please add it to .env")
+
+    if not storedAPIcreds["reddit_username"] or not storedAPIcreds["reddit_password"]:
+        redditSession = Reddit(
+            client_id=storedAPIcreds["reddit_id"],
+            client_secret=storedAPIcreds["reddit_secret"],
+            user_agent="pc:Reddit stories to epub:v{} (by u/jklideas and mircohaug)".format(
+                version("reddit2epub")
+            ),
         )
-    # check if .env.dist has any template values
-    elif (
-        templateAPIcreds["reddit_id"] == "Replace_Me"
-        and templateAPIcreds["reddit_secret"] == "Replace_Me_Too"
-    ):
-        raise Exception(
-            "Could not load .env file. "
-            "And found template values in .env.dist file. "
-            "Please check README.md file for instructions on how to add credentials to .env"
-        )
-    # could not load .env file and .env.dist has non-template values (instead of .env having them)
     else:
-        raise Exception(
-            "Found updated values in .env.dist file but no .env file. "
-            "Please check README.md file for instructions on how to add credentials to .env"
+        print("Authenticating to Reddit API with stored username and password...")
+        redditSession = Reddit(
+            client_id=storedAPIcreds["reddit_id"],
+            client_secret=storedAPIcreds["reddit_secret"],
+            user_agent="pc:Reddit stories to epub:v{} (by u/jklideas and mircohaug)".format(
+                version("reddit2epub")
+            ),
+            username=storedAPIcreds["reddit_username"],
+            password=storedAPIcreds["reddit_password"],
         )
 
-if not storedAPIcreds["reddit_id"]:
-    raise Exception("No reddit_id found. Please add it to .env")
-if not storedAPIcreds["reddit_secret"]:
-    raise Exception("No reddit_secret found. Please add it to .env")
-
-if not storedAPIcreds["reddit_username"] or not storedAPIcreds["reddit_password"]:
-    reddit = praw.Reddit(
-        client_id=storedAPIcreds["reddit_id"],
-        client_secret=storedAPIcreds["reddit_secret"],
-        user_agent="pc:Reddit stories to epub:v{} (by u/jklideas and mircohaug)".format(
-            version("reddit2epub")
-        ),
-    )
-else:
-    print("Authenticating to Reddit API with stored username and password...")
-    reddit = praw.Reddit(
-        client_id=storedAPIcreds["reddit_id"],
-        client_secret=storedAPIcreds["reddit_secret"],
-        user_agent="pc:Reddit stories to epub:v{} (by u/jklideas and mircohaug)".format(
-            version("reddit2epub")
-        ),
-        username=storedAPIcreds["reddit_username"],
-        password=storedAPIcreds["reddit_password"],
-    )
-
-try:
-    reddit.user.me()
-except Exception as e:
-    if e.error == "invalid_grant":
-        print("Authentication failed. Please check your credentials in .env")
-        sys.exit(1)
+    try:
+        redditSession.user.me()
+    except Exception as e:
+        print("ERROR: Failed to connect to Reddit API. Please check your credentials in .env")
+        if e == "invalid_grant":
+            print("Authentication failed. Please check your credentials in .env")
+            sys.exit(1)
+        else:
+            raise
     else:
-        raise
-else:
-    print("Authenticated successfully.")
+        print("Authenticated successfully.")
+
+    return redditSession
 
 
 def get_chapters_from_anchor(
+    redditSession: Reddit,
     input_url,
     overlap: int = 2,
     all_reddit: bool = False,
 ) -> (Redditor, List[Submission], str):
-    author, post_subreddit, title = process_anchor_url(input_url)
+    author, post_subreddit, title = process_anchor_url(redditSession, input_url)
 
     search_title = " ".join(title.split(" ")[:overlap])
 
     selected_submissions = get_selected_posts(
+        redditSession,
         author=author,
         post_subreddit=post_subreddit,
         all_reddit=all_reddit,
@@ -148,18 +153,21 @@ def create_book_from_chapters(
 
 
 def get_selected_posts(
+    redditSession: Reddit,
     author: Redditor,
     post_subreddit: Subreddit,
     search_title: str,
     all_reddit: bool = False,
 ) -> List[Submission]:
     if all_reddit:
-        sub_to_search_in = reddit.subreddit("all")
+        sub_to_search_in = redditSession.subreddit("all")
     else:
         sub_to_search_in = post_subreddit
-    # is limited to 250 items
+    # is limited to 250 items ## TODO: where is this from? Did/Does reddit api limit returns to 250? Is this an old comment about prior limit in code?
     list_of_posts = sub_to_search_in.search(
-        'author:"{}" title:"{}" '.format(author, search_title), limit=None, sort="new"
+        'author:"{}" title:"{}" '.format(author, search_title),
+        limit=None,
+        sort="new",
     )
     list_of_posts = list(list_of_posts)
     selected_submissions = []
@@ -173,7 +181,7 @@ def get_selected_posts(
             else:
                 # is crosspost if not likely media and ignored
                 if hasattr(p, "crosspost_parent"):
-                    original_post = list(reddit.info(fullnames=[p.crosspost_parent]))[0]
+                    original_post = list(redditSession.info(fullnames=[p.crosspost_parent]))[0]
                     if not original_post.is_self:
                         # double crossposts not supported
                         continue
@@ -183,8 +191,8 @@ def get_selected_posts(
     return selected_submissions
 
 
-def process_anchor_url(input_url: str) -> (Redditor, Subreddit, str):
-    initial_submission = reddit.submission(url=input_url)
+def process_anchor_url(redditSession: Reddit, input_url: str) -> (Redditor, Subreddit, str):
+    initial_submission = redditSession.submission(url=input_url)
     title = initial_submission.title
     author = initial_submission.author
     post_subreddit = initial_submission.subreddit
