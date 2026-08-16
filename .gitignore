@@ -3,3 +3,12 @@
 build
 dist
 *.egg-info
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.agents/
+.scratch/
+docs/
+AGENTS.md
+TODO.md
